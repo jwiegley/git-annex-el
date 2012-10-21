@@ -37,6 +37,9 @@
 ;;     @ a    Add file to Git annex
 ;;     @ e    Edit an annexed file
 
+(eval-when-compile
+  (require 'cl))
+
 (defgroup git-annex nil
   "Mode for easy editing of git-annex'd files"
   :group 'files)
@@ -63,7 +66,7 @@
         (add-hook 'kill-buffer-hook 'git-annex-add-file nil t)
         (setq buffer-read-only t)))))
 
-(defface git-annex-dired-annexed
+(defface git-annex-dired-annexed-available
   '((((class color) (background dark))
      (:foreground "dark green"))
     (((class color) (background light))
@@ -71,29 +74,51 @@
   "Face used to highlight git-annex'd files."
   :group 'git-annex)
 
-(defvar git-annex-dired-annexed 'git-annex-dired-annexed
-  "Face name used to highlight git-annex'd files.")
+(defface git-annex-dired-annexed-unavailable
+  '((((class color) (background dark))
+     (:foreground "firebrick"))
+    (((class color) (background light))
+     (:foreground "firebrick")))
+  "Face used to highlight git-annex'd files."
+  :group 'git-annex)
+
+(defvar git-annex-dired-annexed-available 'git-annex-dired-annexed-available
+  "Face name used to highlight available git-annex'd files.")
+(defvar git-annex-dired-annexed-unavailable 'git-annex-dired-annexed-unavailable
+  "Face name used to highlight unavailable git-annex'd files.")
 (defvar git-annex-dired-annexed-invisible
   '(face git-annex-dired-annexed invisible t)
   "Face name used to hide a git-annex'd file's annex path.")
 
+(defun git-annex-lookup-file (limit)
+  (and (re-search-forward " -> \\(.*\\.git/annex/.+\\)" limit t)
+       (file-exists-p
+        (expand-file-name (match-string 1)))))
+
 (eval-after-load "dired"
-  '(add-to-list 'dired-font-lock-keywords
-                (list " -> \\.git/annex/"
-                      '("\\(.+\\)\\( -> .+\\)" (dired-move-to-filename) nil
-                        (1 git-annex-dired-annexed)
-                        (2 git-annex-dired-annexed-invisible)))))
+  '(progn
+     (add-to-list 'dired-font-lock-keywords
+                  (list " -> .*\\.git/annex/"
+                        '("\\(.+\\)\\( -> .+\\)" (dired-move-to-filename) nil
+                          (1 git-annex-dired-annexed-unavailable)
+                          (2 git-annex-dired-annexed-invisible))))
+     (add-to-list 'dired-font-lock-keywords
+                  (list 'git-annex-lookup-file
+                        '("\\(.+\\)\\( -> .+\\)" (dired-move-to-filename) nil
+                          (1 git-annex-dired-annexed-available)
+                          (2 git-annex-dired-annexed-invisible))))))
 
 (defvar git-annex-dired-map
   (let ((map (make-keymap)))
     (define-key map "a" 'git-annex-dired-add-files)
+    (define-key map "d" 'git-annex-dired-drop-files)
     (define-key map "e" 'git-annex-dired-edit-files)
+    (define-key map "g" 'git-annex-dired-get-files)
     map)
   "Git-annex keymap for `dired-mode' buffers.")
 
 (add-hook 'dired-mode-hook
-          (lambda ()
-            (define-key dired-mode-map "@" git-annex-dired-map)))
+          (lambda () (define-key dired-mode-map "@" git-annex-dired-map)))
 
 (defun git-annex-dired--apply (command file-list)
   (let ((here (point)))
@@ -104,23 +129,22 @@
               file-list)
       (goto-char here))))
 
-(defun git-annex-dired-add-files (file-list &optional arg)
-  (interactive
-   (let ((files (dired-get-marked-files t current-prefix-arg)))
-     (list files current-prefix-arg)))
-  (git-annex-dired--apply "add" file-list)
-  (let ((msg (format "Annex: updated %d file(s)" (length file-list))))
-    (call-process "git" nil nil nil "commit" "-m" msg)
-    (message msg)))
+(defmacro git-annex-dired-do-to-files (cmd msg &optional commit-after)
+  `(defun ,(intern (concat "git-annex-dired-" cmd "-files"))
+     (file-list &optional arg)
+     (interactive
+      (let ((files (dired-get-marked-files t current-prefix-arg)))
+        (list files current-prefix-arg)))
+     (git-annex-dired--apply ,cmd file-list)
+     (let ((msg (format ,msg (length file-list))))
+       ,(if commit-after
+            `(call-process "git" nil nil nil "commit" "-m" msg))
+       (message msg))))
 
-(defun git-annex-dired-edit-files (file-list &optional arg)
-  (interactive
-   (let ((files (dired-get-marked-files t current-prefix-arg)))
-     (list files current-prefix-arg)))
-  (git-annex-dired--apply "edit" file-list)
-  (let ((msg (format "Annex: unlocked %d file(s) for editing"
-                     (length file-list))))
-    (message msg)))
+(git-annex-dired-do-to-files "add" "Annex: updated %d file(s)" t)
+(git-annex-dired-do-to-files "drop" "Annex: dropped %d file(s)")
+(git-annex-dired-do-to-files "edit" "Annex: unlocked %d file(s) for editing")
+(git-annex-dired-do-to-files "get" "Annex: got %d file(s)")
 
 (provide 'git-annex)
 
