@@ -64,7 +64,22 @@
               (revert-buffer nil t t)
             (goto-char here)))
         (add-hook 'kill-buffer-hook 'git-annex-add-file nil t)
-        (setq buffer-read-only t)))))
+        (setq buffer-read-only t))))
+  (when (and buffer-file-name (not buffer-read-only)
+             (not (file-symlink-p buffer-file-name)))
+    (let ((cur (current-buffer))
+          (name buffer-file-name)
+          (result))
+     (with-temp-buffer
+       (call-process "git" nil t nil "diff-files" "--diff-filter=T" "-G^[./]*\\.git/annex/objects/" "--name-only" "--" (file-relative-name name default-directory))
+       (setq result (buffer-string)))
+     (unless (string= result "")
+       (git-annex-add-file)
+       (let ((here (point-marker)))
+         (unwind-protect
+              (revert-buffer nil t t)
+           (goto-char here)))
+       (setq buffer-read-only nil)))))
 
 (defface git-annex-dired-annexed-available
   '((((class color) (background dark))
