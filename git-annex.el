@@ -38,6 +38,8 @@
 ;;     @ e    Edit an annexed file
 
 (eval-when-compile
+  (require 'dired nil t)	      ; for variable dired-mode-map
+  (require 'dired-aux nil t)	      ; for function dired-relist-file
   (require 'cl))
 
 (defgroup git-annex nil
