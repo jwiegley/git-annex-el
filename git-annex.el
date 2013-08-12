@@ -1,4 +1,4 @@
-;;; git-annex --- Mode for easy editing of git-annex'd files
+;;; git-annex.el --- Mode for easy editing of git-annex'd files
 
 ;; Copyright (C) 2012 John Wiegley
 
