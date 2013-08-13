@@ -104,13 +104,13 @@
 (defvar git-annex-dired-annexed-unavailable 'git-annex-dired-annexed-unavailable
   "Face name used to highlight unavailable git-annex'd files.")
 (defvar git-annex-dired-annexed-invisible
-  '(face git-annex-dired-annexed invisible t)
+  '(face git-annex-dired-annexed-available invisible t)
   "Face name used to hide a git-annex'd file's annex path.")
 
 (defun git-annex-lookup-file (limit)
   (and (re-search-forward " -> \\(.*\\.git/annex/.+\\)" limit t)
        (file-exists-p
-        (expand-file-name (match-string 1)))))
+        (expand-file-name (match-string 1) (dired-current-directory)))))
 
 (eval-after-load "dired"
   '(progn
