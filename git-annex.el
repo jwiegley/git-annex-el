@@ -46,12 +46,18 @@
   "Mode for easy editing of git-annex'd files"
   :group 'files)
 
+(defcustom git-annex-commit t
+  "If not nil, git-annex command will commit by default.
+
+otherwise you will have to commit by hand.")
+
 (defsubst git-annex (&rest args)
   (apply #'call-process "git" nil nil nil "annex" args))
 
 (defun git-annex-add-file ()
   (git-annex "add" (file-relative-name buffer-file-name default-directory))
-  (call-process "git" nil nil nil "commit" "-m" "Updated"))
+  (when git-annex-commit
+    (call-process "git" nil nil nil "commit" "-m" "Updated")))
 
 (defadvice toggle-read-only (before git-annex-edit-file activate)
   (when (and buffer-file-name buffer-read-only
@@ -155,7 +161,7 @@
      (git-annex-dired--apply ,cmd file-list)
      (let ((msg (format ,msg (length file-list))))
        ,(if commit-after
-            `(call-process "git" nil nil nil "commit" "-m" msg))
+            `(when git-annex-commit (call-process "git" nil nil nil "commit" "-m" msg)))
        (message msg))))
 
 (git-annex-dired-do-to-files "add" "Annex: updated %d file(s)" t)
