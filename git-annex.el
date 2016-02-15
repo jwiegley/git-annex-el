@@ -59,7 +59,7 @@ otherwise you will have to commit by hand.")
   (when git-annex-commit
     (call-process "git" nil nil nil "commit" "-m" "Updated")))
 
-(defadvice toggle-read-only (before git-annex-edit-file activate)
+(defun git-annex--toggle-unlock ()
   (when (string=
 		 (vc-backend buffer-file-name)
 		 "Git"
@@ -93,6 +93,12 @@ otherwise you will have to commit by hand.")
 			  (goto-char here)))
 		(setq buffer-read-only nil)))))
   )
+
+(defadvice toggle-read-only (before git-annex-edit-file activate)
+  (git-annex--toggle-unlock))
+
+(defadvice read-only-mode (before git-annex-edit-file activate)
+  (git-annex--toggle-unlock))
 
 (defface git-annex-dired-annexed-available
   '((((class color) (background dark))
