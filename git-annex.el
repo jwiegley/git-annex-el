@@ -4,7 +4,7 @@
 
 ;; Author: John Wiegley <jwiegley@gmail.com>
 ;; Created: 20 Oct 2012
-;; Version: 1.0
+;; Version: 1.1
 ;; Keywords: files data git annex
 ;; X-URL: https://github.com/jwiegley/git-annex-el
 
