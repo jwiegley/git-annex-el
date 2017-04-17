@@ -37,6 +37,8 @@
 ;;     @ a    Add file to Git annex
 ;;     @ e    Edit an annexed file
 
+;;; Code:
+
 (eval-when-compile
   (require 'dired nil t)	      ; for variable dired-mode-map
   (require 'dired-aux nil t)	      ; for function dired-relist-file
