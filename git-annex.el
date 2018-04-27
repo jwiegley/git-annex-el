@@ -128,9 +128,10 @@ otherwise you will have to commit by hand."
   "Face name used to hide a git-annex'd file's annex path.")
 
 (defun git-annex-lookup-file (limit)
-  (and (re-search-forward " -> \\(.*\\.git/annex/.+\\)" limit t)
-       (file-exists-p
-        (expand-file-name (match-string 1) (dired-current-directory)))))
+  (cl-loop while (re-search-forward " -> \\(.*\\.git/annex/.+\\)" limit t)
+           if (file-exists-p
+               (expand-file-name (match-string 1) (dired-current-directory)))
+           return t))
 
 (eval-after-load "dired"
   '(progn
