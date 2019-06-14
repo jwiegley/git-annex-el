@@ -130,7 +130,7 @@ otherwise you will have to commit by hand."
 (defun git-annex-lookup-file (limit)
   (cl-loop while (re-search-forward " -> \\(.*\\.git/annex/.+\\)" limit t)
            if (file-exists-p
-               (expand-file-name (match-string 1) (dired-current-directory)))
+               (expand-file-name (match-string 1) (file-name-directory (dired-get-filename nil t))))
            return t))
 
 (eval-after-load "dired"
