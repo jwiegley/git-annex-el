@@ -155,8 +155,10 @@ otherwise you will have to commit by hand."
     map)
   "Git-annex keymap for `dired-mode' buffers.")
 
-(add-hook 'dired-mode-hook
-          (lambda () (define-key dired-mode-map "@" git-annex-dired-map)))
+(defun git-annex-enable-keymap ()
+  (define-key dired-mode-map "@" git-annex-dired-map))
+
+(add-hook 'dired-mode-hook #'git-annex-enable-keymap)
 
 (defun git-annex-dired--apply (command file-list)
   (let ((here (point)))
